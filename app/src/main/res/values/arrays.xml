@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="region_names">
+        <item>@string/region_ru</item>
+        <item>@string/region_us</item>
+        <item>@string/region_kz</item>
+        <item>@string/region_ua</item>
+        <item>@string/region_de</item>
+        <item>@string/region_gb</item>
+        <item>@string/region_jp</item>
+        <item>@string/region_kr</item>
+    </string-array>
+
+    <string-array name="region_codes">
+        <item>RU</item>
+        <item>US</item>
+        <item>KZ</item>
+        <item>UA</item>
+        <item>DE</item>
+        <item>GB</item>
+        <item>JP</item>
+        <item>KR</item>
+    </string-array>
+</resources>

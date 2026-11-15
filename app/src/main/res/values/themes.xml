@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.MargyTube" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">?attr/colorSurface</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:colorAccent">?attr/colorPrimary</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.MargyTube.Dialog</item>
+    </style>
+
+    <style name="ThemeOverlay.MargyTube.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog" />
+
+    <!-- Accent overlays: real Material 3 colour roles, applied before the layout is inflated. -->
+    <style name="ThemeOverlay.MargyTube.Green" parent="">
+        <item name="colorPrimary">@color/green_primary</item>
+        <item name="colorOnPrimary">@color/green_on_primary</item>
+        <item name="colorPrimaryContainer">@color/green_container</item>
+        <item name="colorOnPrimaryContainer">@color/green_on_container</item>
+        <item name="colorSecondary">@color/green_secondary</item>
+        <item name="colorOnSecondary">@color/green_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/green_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/green_on_secondary_container</item>
+        <item name="colorSurfaceTint">@color/green_primary</item>
+    </style>
+
+    <style name="ThemeOverlay.MargyTube.Blue" parent="">
+        <item name="colorPrimary">@color/blue_primary</item>
+        <item name="colorOnPrimary">@color/blue_on_primary</item>
+        <item name="colorPrimaryContainer">@color/blue_container</item>
+        <item name="colorOnPrimaryContainer">@color/blue_on_container</item>
+        <item name="colorSecondary">@color/blue_secondary</item>
+        <item name="colorOnSecondary">@color/blue_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/blue_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/blue_on_secondary_container</item>
+        <item name="colorSurfaceTint">@color/blue_primary</item>
+    </style>
+
+    <style name="ThemeOverlay.MargyTube.Purple" parent="">
+        <item name="colorPrimary">@color/purple_primary</item>
+        <item name="colorOnPrimary">@color/purple_on_primary</item>
+        <item name="colorPrimaryContainer">@color/purple_container</item>
+        <item name="colorOnPrimaryContainer">@color/purple_on_container</item>
+        <item name="colorSecondary">@color/purple_secondary</item>
+        <item name="colorOnSecondary">@color/purple_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/purple_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/purple_on_secondary_container</item>
+        <item name="colorSurfaceTint">@color/purple_primary</item>
+    </style>
+
+    <style name="ThemeOverlay.MargyTube.Pink" parent="">
+        <item name="colorPrimary">@color/pink_primary</item>
+        <item name="colorOnPrimary">@color/pink_on_primary</item>
+        <item name="colorPrimaryContainer">@color/pink_container</item>
+        <item name="colorOnPrimaryContainer">@color/pink_on_container</item>
+        <item name="colorSecondary">@color/pink_secondary</item>
+        <item name="colorOnSecondary">@color/pink_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/pink_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/pink_on_secondary_container</item>
+        <item name="colorSurfaceTint">@color/pink_primary</item>
+    </style>
+
+    <style name="ThemeOverlay.MargyTube.Orange" parent="">
+        <item name="colorPrimary">@color/orange_primary</item>
+        <item name="colorOnPrimary">@color/orange_on_primary</item>
+        <item name="colorPrimaryContainer">@color/orange_container</item>
+        <item name="colorOnPrimaryContainer">@color/orange_on_container</item>
+        <item name="colorSecondary">@color/orange_secondary</item>
+        <item name="colorOnSecondary">@color/orange_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/orange_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/orange_on_secondary_container</item>
+        <item name="colorSurfaceTint">@color/orange_primary</item>
+    </style>
+
+    <style name="ThemeOverlay.MargyTube.Red" parent="">
+        <item name="colorPrimary">@color/red_primary</item>
+        <item name="colorOnPrimary">@color/red_on_primary</item>
+        <item name="colorPrimaryContainer">@color/red_container</item>
+        <item name="colorOnPrimaryContainer">@color/red_on_container</item>
+        <item name="colorSecondary">@color/red_secondary</item>
+        <item name="colorOnSecondary">@color/red_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/red_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/red_on_secondary_container</item>
+        <item name="colorSurfaceTint">@color/red_primary</item>
+    </style>
+
+</resources>

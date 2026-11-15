@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Light theme accent roles -->
+    <color name="green_primary">#FF006C51</color>
+    <color name="green_on_primary">#FFFFFFFF</color>
+    <color name="green_container">#FF89F8D2</color>
+    <color name="green_on_container">#FF002116</color>
+    <color name="green_secondary">#FF4B6359</color>
+    <color name="green_on_secondary">#FFFFFFFF</color>
+    <color name="green_secondary_container">#FFCDE9DD</color>
+    <color name="green_on_secondary_container">#FF072019</color>
+
+    <color name="blue_primary">#FF0B57D0</color>
+    <color name="blue_on_primary">#FFFFFFFF</color>
+    <color name="blue_container">#FFD3E3FD</color>
+    <color name="blue_on_container">#FF041E49</color>
+    <color name="blue_secondary">#FF565E71</color>
+    <color name="blue_on_secondary">#FFFFFFFF</color>
+    <color name="blue_secondary_container">#FFDAE2F9</color>
+    <color name="blue_on_secondary_container">#FF131C2B</color>
+
+    <color name="purple_primary">#FF6750A4</color>
+    <color name="purple_on_primary">#FFFFFFFF</color>
+    <color name="purple_container">#FFEADDFF</color>
+    <color name="purple_on_container">#FF21005D</color>
+    <color name="purple_secondary">#FF625B71</color>
+    <color name="purple_on_secondary">#FFFFFFFF</color>
+    <color name="purple_secondary_container">#FFE8DEF8</color>
+    <color name="purple_on_secondary_container">#FF1D192B</color>
+
+    <color name="pink_primary">#FF984061</color>
+    <color name="pink_on_primary">#FFFFFFFF</color>
+    <color name="pink_container">#FFFFD9E2</color>
+    <color name="pink_on_container">#FF3E001D</color>
+    <color name="pink_secondary">#FF74565F</color>
+    <color name="pink_on_secondary">#FFFFFFFF</color>
+    <color name="pink_secondary_container">#FFFFD9E2</color>
+    <color name="pink_on_secondary_container">#FF2B151C</color>
+
+    <color name="orange_primary">#FF8B5000</color>
+    <color name="orange_on_primary">#FFFFFFFF</color>
+    <color name="orange_container">#FFFFDCC0</color>
+    <color name="orange_on_container">#FF2D1600</color>
+    <color name="orange_secondary">#FF725A42</color>
+    <color name="orange_on_secondary">#FFFFFFFF</color>
+    <color name="orange_secondary_container">#FFFFDCC0</color>
+    <color name="orange_on_secondary_container">#FF291806</color>
+
+    <color name="red_primary">#FFB3261E</color>
+    <color name="red_on_primary">#FFFFFFFF</color>
+    <color name="red_container">#FFF9DEDC</color>
+    <color name="red_on_container">#FF410E0B</color>
+    <color name="red_secondary">#FF775651</color>
+    <color name="red_on_secondary">#FFFFFFFF</color>
+    <color name="red_secondary_container">#FFFFDAD6</color>
+    <color name="red_on_secondary_container">#FF2C1512</color>
+
+    <color name="brand_green">#FF00C853</color>
+    <color name="scrim">#66000000</color>
+    <color name="badge_background">#CC000000</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>
