@@ -121,8 +121,8 @@ public class SettingsActivity extends BaseActivity {
             @Override
             public void onStopTrackingTouch(Slider slider) {
                 int value = (int) slider.getValue();
-                if (value != Prefs.radius(this)) {
-                    Prefs.setRadius(this, value);
+                if (value != Prefs.radius(SettingsActivity.this)) {
+                    Prefs.setRadius(SettingsActivity.this, value);
                 }
             }
         });
@@ -137,8 +137,8 @@ public class SettingsActivity extends BaseActivity {
             @Override
             public void onStopTrackingTouch(Slider slider) {
                 int value = (int) slider.getValue();
-                if (value != Prefs.fontScale(this)) {
-                    Prefs.setFontScale(this, value);
+                if (value != Prefs.fontScale(SettingsActivity.this)) {
+                    Prefs.setFontScale(SettingsActivity.this, value);
                     recreate();
                 }
             }
