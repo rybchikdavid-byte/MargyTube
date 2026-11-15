@@ -5,6 +5,8 @@
 Отдельный клиент YouTube для Android: лента, поиск, видео, комментарии и плагины.
 Написан на Java, интерфейс — настоящий Material You 3, плеер — официальный YouTube.
 
+**[Скачать MargyTube.apk](https://github.com/rybchikdavid-byte/MargyTube/releases/latest)** · Android 8.0+ · 5,3 МБ
+
 ## Что умеет
 
 - **Лента «В тренде»** по выбранной стране и **поиск** — через официальный YouTube Data API v3.
