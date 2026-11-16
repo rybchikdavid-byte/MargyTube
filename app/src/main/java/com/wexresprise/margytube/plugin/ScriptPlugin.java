@@ -1,6 +1,5 @@
 package com.wexresprise.margytube.plugin;
 
-import android.content.Context;
 import android.util.Log;
 
 import com.wexresprise.margytube.Prefs;
@@ -37,7 +36,7 @@ public final class ScriptPlugin {
 
     private final String id;
     private final File script;
-    private final Context app;
+    private final android.content.Context app;
     private final ExecutorService exec = Executors.newSingleThreadExecutor(r -> {
         Thread thread = new Thread(r, "mgtp-js");
         thread.setDaemon(true);
@@ -46,7 +45,7 @@ public final class ScriptPlugin {
     private volatile boolean broken;
     private volatile String breakReason;
 
-    public ScriptPlugin(String id, File script, Context context) {
+    public ScriptPlugin(String id, File script, android.content.Context context) {
         this.id = id;
         this.script = script;
         this.app = context.getApplicationContext();
