@@ -59,6 +59,8 @@
     <string name="video_error_text">YouTube не отдал данные этого ролика. Открой его в YouTube.</string>
     <string name="description_empty">Автор не добавил описание.</string>
     <string name="channel_label">Канал</string>
+    <string name="fullscreen_enter">Во весь экран</string>
+    <string name="fullscreen_exit">Выйти из полноэкранного режима</string>
     <string name="player_note">Играет Google Media3 (ExoPlayer): системный аппаратный декодер, без веб-плеера.</string>
     <string name="player_no_stream">YouTube не отдал поток для этого видео</string>
     <string name="player_failed">Ошибка воспроизведения: %1$s</string>

@@ -7,7 +7,7 @@ import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-/** 16:9 host for the official YouTube IFrame WebView. */
+/** 16:9 host for the Media3 player, letterboxed inside the player screen. */
 public class AspectFrameLayout extends FrameLayout {
     public AspectFrameLayout(@NonNull Context context) {
         super(context);

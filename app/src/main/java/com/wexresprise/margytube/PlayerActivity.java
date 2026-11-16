@@ -3,13 +3,21 @@ package com.wexresprise.margytube;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import androidx.activity.OnBackPressedCallback;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.media3.common.AudioAttributes;
 import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
@@ -59,6 +67,10 @@ public class PlayerActivity extends BaseActivity {
     private MaterialButton commentsRetry;
     private TextInputEditText commentInput;
     private View commentBar;
+    private View playerMain;
+    private ViewGroup videoFrame;
+    private FrameLayout fullscreenLayer;
+    private FrameLayout fullscreenHost;
 
     private CommentAdapter commentAdapter;
     private Video video;
@@ -66,6 +78,7 @@ public class PlayerActivity extends BaseActivity {
     private InnerTube.Playback playback;
     private boolean usingMerged;
     private boolean descriptionExpanded;
+    private boolean fullscreen;
 
     public static void open(Context context, Video video) {
         Intent intent = new Intent(context, PlayerActivity.class);
@@ -97,10 +110,28 @@ public class PlayerActivity extends BaseActivity {
         commentsRetry = findViewById(R.id.commentsRetry);
         commentInput = findViewById(R.id.commentInput);
         commentBar = findViewById(R.id.commentBar);
+        playerMain = findViewById(R.id.playerMain);
+        videoFrame = findViewById(R.id.videoFrame);
+        fullscreenLayer = findViewById(R.id.fullscreenLayer);
+        fullscreenHost = findViewById(R.id.fullscreenHost);
 
         applyInsets(root, toolbar, commentBar, true);
 
         toolbar.setNavigationOnClickListener(v -> finish());
+        findViewById(R.id.fullscreenButton).setOnClickListener(v -> enterFullscreen());
+        findViewById(R.id.exitFullscreenButton).setOnClickListener(v -> exitFullscreen());
+
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (fullscreen) {
+                    exitFullscreen();
+                } else {
+                    setEnabled(false);
+                    PlayerActivity.this.getOnBackPressedDispatcher().onBackPressed();
+                }
+            }
+        });
 
         java.io.Serializable extra = getIntent().getSerializableExtra("video");
         if (!(extra instanceof Video)) {
@@ -125,6 +156,10 @@ public class PlayerActivity extends BaseActivity {
         loadPlayback();
         loadComments();
         loadPluginNotes();
+
+        if (savedInstanceState != null && savedInstanceState.getBoolean("fullscreen", false)) {
+            enterFullscreen();
+        }
     }
 
     private void setupPlayer() {
@@ -459,6 +494,83 @@ public class PlayerActivity extends BaseActivity {
                 .setPositiveButton(R.string.open_settings, (dialog, which) ->
                         startActivity(new Intent(this, SettingsActivity.class)))
                 .show();
+    }
+
+    private void enterFullscreen() {
+        if (fullscreen) {
+            return;
+        }
+        fullscreen = true;
+        ViewGroup parent = playerView.getParent() instanceof ViewGroup
+                ? (ViewGroup) playerView.getParent() : null;
+        if (parent != null) {
+            parent.removeView(playerView);
+        }
+        fullscreenHost.removeAllViews();
+        fullscreenHost.addView(playerView, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT));
+        fullscreenLayer.setVisibility(View.VISIBLE);
+        playerMain.setVisibility(View.GONE);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+        hideSystemBars();
+    }
+
+    private void exitFullscreen() {
+        if (!fullscreen) {
+            return;
+        }
+        fullscreen = false;
+        ViewGroup parent = playerView.getParent() instanceof ViewGroup
+                ? (ViewGroup) playerView.getParent() : null;
+        if (parent != null) {
+            parent.removeView(playerView);
+        }
+        videoFrame.addView(playerView, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT));
+        fullscreenHost.removeAllViews();
+        fullscreenLayer.setVisibility(View.GONE);
+        playerMain.setVisibility(View.VISIBLE);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+        showSystemBars();
+    }
+
+    private void hideSystemBars() {
+        WindowInsetsControllerCompat controller =
+                WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        controller.setSystemBarsBehavior(
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+        controller.hide(WindowInsetsCompat.Type.systemBars());
+    }
+
+    private void showSystemBars() {
+        WindowInsetsControllerCompat controller =
+                WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        controller.show(WindowInsetsCompat.Type.systemBars());
+        updateSystemBars();
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        if (fullscreen) {
+            hideSystemBars();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (fullscreen) {
+            hideSystemBars();
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean("fullscreen", fullscreen);
     }
 
     @Override
