@@ -8,6 +8,7 @@ import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -79,6 +80,7 @@ public class PlayerActivity extends BaseActivity {
     private boolean usingMerged;
     private boolean descriptionExpanded;
     private boolean fullscreen;
+    private OnBackPressedCallback backCallback;
 
     public static void open(Context context, Video video) {
         Intent intent = new Intent(context, PlayerActivity.class);
@@ -121,7 +123,7 @@ public class PlayerActivity extends BaseActivity {
         findViewById(R.id.fullscreenButton).setOnClickListener(v -> enterFullscreen());
         findViewById(R.id.exitFullscreenButton).setOnClickListener(v -> exitFullscreen());
 
-        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+        backCallback = new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
                 if (fullscreen) {
@@ -131,7 +133,8 @@ public class PlayerActivity extends BaseActivity {
                     PlayerActivity.this.getOnBackPressedDispatcher().onBackPressed();
                 }
             }
-        });
+        };
+        getOnBackPressedDispatcher().addCallback(this, backCallback);
 
         java.io.Serializable extra = getIntent().getSerializableExtra("video");
         if (!(extra instanceof Video)) {
@@ -501,6 +504,9 @@ public class PlayerActivity extends BaseActivity {
             return;
         }
         fullscreen = true;
+        if (backCallback != null) {
+            backCallback.setEnabled(true);
+        }
         ViewGroup parent = playerView.getParent() instanceof ViewGroup
                 ? (ViewGroup) playerView.getParent() : null;
         if (parent != null) {
