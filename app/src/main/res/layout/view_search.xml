@@ -46,7 +46,7 @@
         android:layout_height="wrap_content"
         android:paddingHorizontal="16dp"
         android:paddingBottom="6dp"
-        android:text="@string/search_demo"
+        android:text="@string/search_note"
         android:textAppearance="?attr/textAppearanceBodySmall"
         android:textColor="?attr/colorOnSurfaceVariant"
         android:visibility="gone" />

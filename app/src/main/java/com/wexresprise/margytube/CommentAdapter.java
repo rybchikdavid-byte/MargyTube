@@ -48,7 +48,11 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.Holder> 
         holder.author.setText(comment.author);
         holder.text.setText(comment.text);
         holder.avatarLetter.setText(comment.initial());
-        holder.time.setText(Formats.relative(comment.publishedAt));
+        String relative = Formats.relative(comment.publishedAt);
+        if (relative.isEmpty()) {
+            relative = comment.publishedAt == null ? "" : comment.publishedAt;
+        }
+        holder.time.setText(relative);
         if (comment.likes > 0) {
             holder.likes.setVisibility(View.VISIBLE);
             holder.likes.setText("\uD83D\uDC4D " + Formats.compact(comment.likes));

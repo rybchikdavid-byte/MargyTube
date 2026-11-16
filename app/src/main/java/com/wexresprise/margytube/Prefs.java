@@ -11,9 +11,9 @@ import androidx.appcompat.app.AppCompatDelegate;
 import com.google.android.material.color.DynamicColors;
 
 /**
- * Every preference lives here. Appearance setters bump a version so open screens
- * recreate themselves exactly once, keeping the Material theme honest instead of
- * faking colours after the fact.
+ * Every preference lives here. Appearance setters only bump a version when the
+ * value really changed, so a plugin that applies its own style cannot make the
+ * screens recreate themselves in a loop.
  */
 public final class Prefs {
     private static final String FILE = "margytube";
@@ -34,15 +34,28 @@ public final class Prefs {
     public static final int CARD_FILLED = 1;
     public static final int CARD_OUTLINED = 2;
 
+    /**
+     * Google's public OAuth client for YouTube on TV, the same one Android TV
+     * builds use. It lets the device flow work with no setup from the person.
+     */
+    public static final String DEFAULT_OAUTH_CLIENT =
+            "861556708454-d6dlm3lh05idd8npek18k6be8ba3oc68.apps.googleusercontent.com";
+
     private static final String KEY_ACCENT = "accent";
     private static final String KEY_THEME = "theme";
     private static final String KEY_CARD = "card_style";
     private static final String KEY_RADIUS = "radius";
     private static final String KEY_FONT = "font_scale";
-    private static final String KEY_API = "api_key";
     private static final String KEY_TOKEN = "oauth_token";
+    private static final String KEY_REFRESH = "oauth_refresh";
+    private static final String KEY_EXPIRY = "oauth_expiry";
+    private static final String KEY_ACCOUNT = "account_name";
+    private static final String KEY_CHANNEL = "account_channel";
+    private static final String KEY_AVATAR = "account_avatar";
+    private static final String KEY_CLIENT = "oauth_client";
     private static final String KEY_REGION = "region";
     private static final String KEY_STYLE_VERSION = "style_version";
+    private static final String KEY_FEED_INDEX = "feed_index";
 
     private Prefs() {
     }
@@ -56,6 +69,9 @@ public final class Prefs {
     }
 
     public static void setAccent(Context c, String value) {
+        if (value == null || value.equals(accent(c))) {
+            return;
+        }
         sp(c).edit().putString(KEY_ACCENT, value).apply();
         bumpStyle(c);
     }
@@ -65,8 +81,12 @@ public final class Prefs {
     }
 
     public static void setThemeMode(Context c, int mode) {
+        if (mode == themeMode(c)) {
+            return;
+        }
         sp(c).edit().putInt(KEY_THEME, mode).apply();
         applyThemeMode(c);
+        bumpStyle(c);
     }
 
     public static int cardStyle(Context c) {
@@ -74,6 +94,9 @@ public final class Prefs {
     }
 
     public static void setCardStyle(Context c, int style) {
+        if (style == cardStyle(c)) {
+            return;
+        }
         sp(c).edit().putInt(KEY_CARD, style).apply();
         bumpStyle(c);
     }
@@ -83,7 +106,11 @@ public final class Prefs {
     }
 
     public static void setRadius(Context c, int dp) {
-        sp(c).edit().putInt(KEY_RADIUS, dp).apply();
+        int value = Math.max(0, Math.min(28, dp));
+        if (value == radius(c)) {
+            return;
+        }
+        sp(c).edit().putInt(KEY_RADIUS, value).apply();
         bumpStyle(c);
     }
 
@@ -92,24 +119,78 @@ public final class Prefs {
     }
 
     public static void setFontScale(Context c, int percent) {
-        sp(c).edit().putInt(KEY_FONT, percent).apply();
+        int value = Math.max(85, Math.min(125, percent));
+        if (value == fontScale(c)) {
+            return;
+        }
+        sp(c).edit().putInt(KEY_FONT, value).apply();
         bumpStyle(c);
-    }
-
-    public static String apiKey(Context c) {
-        return sp(c).getString(KEY_API, "");
-    }
-
-    public static void setApiKey(Context c, String key) {
-        sp(c).edit().putString(KEY_API, key == null ? "" : key.trim()).apply();
     }
 
     public static String token(Context c) {
         return sp(c).getString(KEY_TOKEN, "");
     }
 
-    public static void setToken(Context c, String token) {
-        sp(c).edit().putString(KEY_TOKEN, token == null ? "" : token.trim()).apply();
+    public static String refreshToken(Context c) {
+        return sp(c).getString(KEY_REFRESH, "");
+    }
+
+    public static long tokenExpiry(Context c) {
+        return sp(c).getLong(KEY_EXPIRY, 0);
+    }
+
+    public static boolean isSignedIn(Context c) {
+        return !token(c).isEmpty() || !refreshToken(c).isEmpty();
+    }
+
+    public static void setSession(Context c, String access, String refresh, long expiresInSeconds) {
+        SharedPreferences.Editor editor = sp(c).edit()
+                .putString(KEY_TOKEN, access == null ? "" : access)
+                .putLong(KEY_EXPIRY, System.currentTimeMillis() + Math.max(60, expiresInSeconds) * 1000L);
+        if (refresh != null && !refresh.isEmpty()) {
+            editor.putString(KEY_REFRESH, refresh);
+        }
+        editor.apply();
+    }
+
+    public static void signOut(Context c) {
+        sp(c).edit()
+                .remove(KEY_TOKEN)
+                .remove(KEY_REFRESH)
+                .remove(KEY_EXPIRY)
+                .remove(KEY_ACCOUNT)
+                .remove(KEY_CHANNEL)
+                .remove(KEY_AVATAR)
+                .apply();
+    }
+
+    public static String accountName(Context c) {
+        return sp(c).getString(KEY_ACCOUNT, "");
+    }
+
+    public static String accountAvatar(Context c) {
+        return sp(c).getString(KEY_AVATAR, "");
+    }
+
+    public static String accountChannel(Context c) {
+        return sp(c).getString(KEY_CHANNEL, "");
+    }
+
+    public static void setAccount(Context c, String name, String channelId, String avatar) {
+        sp(c).edit()
+                .putString(KEY_ACCOUNT, name == null ? "" : name)
+                .putString(KEY_CHANNEL, channelId == null ? "" : channelId)
+                .putString(KEY_AVATAR, avatar == null ? "" : avatar)
+                .apply();
+    }
+
+    public static String oauthClient(Context c) {
+        String stored = sp(c).getString(KEY_CLIENT, "");
+        return stored == null || stored.trim().isEmpty() ? DEFAULT_OAUTH_CLIENT : stored.trim();
+    }
+
+    public static void setOauthClient(Context c, String clientId) {
+        sp(c).edit().putString(KEY_CLIENT, clientId == null ? "" : clientId.trim()).apply();
     }
 
     public static String region(Context c) {
@@ -120,6 +201,16 @@ public final class Prefs {
         sp(c).edit().putString(KEY_REGION, code).apply();
     }
 
+    /** Rotation for the signed-out home feed, so it is not always the same topic. */
+    public static int nextFeedIndex(Context c, int size) {
+        if (size <= 0) {
+            return 0;
+        }
+        int index = Math.floorMod(sp(c).getInt(KEY_FEED_INDEX, 0), size);
+        sp(c).edit().putInt(KEY_FEED_INDEX, (index + 1) % size).apply();
+        return index;
+    }
+
     public static int styleVersion(Context c) {
         return sp(c).getInt(KEY_STYLE_VERSION, 0);
     }
@@ -127,6 +218,47 @@ public final class Prefs {
     public static void bumpStyle(Context c) {
         int v = styleVersion(c) + 1;
         sp(c).edit().putInt(KEY_STYLE_VERSION, v).apply();
+    }
+
+    /** Read-only view of the settings for plugins (margytube.get). */
+    public static String value(Context c, String key) {
+        if (key == null) {
+            return "";
+        }
+        switch (key) {
+            case "accent":
+                return accent(c);
+            case "theme":
+                switch (themeMode(c)) {
+                    case THEME_LIGHT:
+                        return "light";
+                    case THEME_DARK:
+                        return "dark";
+                    default:
+                        return "system";
+                }
+            case "cards":
+                switch (cardStyle(c)) {
+                    case CARD_ELEVATED:
+                        return "elevated";
+                    case CARD_OUTLINED:
+                        return "outlined";
+                    default:
+                        return "filled";
+                }
+            case "radius":
+                return String.valueOf(radius(c));
+            case "font":
+                return String.valueOf(fontScale(c));
+            case "region":
+                return region(c);
+            case "account":
+                return accountName(c);
+            case "signed_in":
+                return isSignedIn(c) ? "yes" : "no";
+            default:
+                return "";
+        }
     }
 
     public static void applyThemeMode(Context c) {

@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import com.wexresprise.margytube.Prefs;
 import com.wexresprise.margytube.Video;
 
 import org.json.JSONArray;
@@ -51,6 +52,8 @@ public final class PluginManager {
     private static final long MAX_MANIFEST = 64 * 1024L;
     private static final long MAX_SCRIPT = 1024 * 1024L;
     private static final Pattern ID = Pattern.compile("^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$");
+    private static final String BUNDLED_ID = "com.margytube.custom";
+    private static final String BUNDLED_ASSET = "custom.mgtp";
     private static final Set<String> ALLOWED = new HashSet<>(Arrays.asList(
             "manifest.json", "plugin.js", "classes.dex", "icon.png"));
 
@@ -248,6 +251,121 @@ public final class PluginManager {
         return id;
     }
 
+    /**
+     * Installs the customization plugin that ships inside the APK, once. It is a
+     * normal .mgtp plugin: the person can switch it off, delete it, or import a
+     * newer build over it.
+     */
+    public static void installBundled(Context c) {
+        File dir = new File(root(c), BUNDLED_ID);
+        if (new File(dir, "manifest.json").isFile()) {
+            return;
+        }
+        try (InputStream in = c.getAssets().open(BUNDLED_ASSET)) {
+            install(c, in);
+            Log.i(TAG, "bundled customization plugin installed");
+        } catch (Exception e) {
+            Log.w(TAG, "cannot install bundled plugin", e);
+        }
+    }
+
+    /** Runs the onApp hook of every enabled script plugin, which may set the style. */
+    public static void applyStyles(Context c) {
+        for (PluginInfo info : list(c)) {
+            if (!info.enabled || info.dex) {
+                continue;
+            }
+            if (!new File(info.dirPath, "plugin.js").isFile()) {
+                continue;
+            }
+            if (!info.hooks.isEmpty() && !info.hooks.contains("onApp")) {
+                continue;
+            }
+            try {
+                scriptFor(c, info).call("onApp", "");
+                clearError(c, info.id);
+            } catch (Throwable t) {
+                Log.w(TAG, "onApp failed in " + info.id, t);
+                setError(c, info.id, describe(t));
+            }
+        }
+    }
+
+    /**
+     * Applies a style object from a plugin:
+     * {"accent":"blue","theme":"dark","cards":"outlined","radius":20,"font":100}
+     */
+    public static boolean applyStyle(Context c, String json) throws Exception {
+        if (json == null || json.trim().isEmpty()) {
+            return false;
+        }
+        final Context app = c.getApplicationContext();
+        JSONObject style = new JSONObject(json);
+        boolean changed = false;
+
+        String accent = style.optString("accent", "");
+        if (!accent.isEmpty() && !accent.equals(Prefs.accent(app))) {
+            Prefs.setAccent(app, accent);
+            changed = true;
+        }
+
+        String theme = style.optString("theme", "");
+        if (!theme.isEmpty()) {
+            int mode = -1;
+            if ("system".equals(theme)) {
+                mode = Prefs.THEME_SYSTEM;
+            } else if ("light".equals(theme)) {
+                mode = Prefs.THEME_LIGHT;
+            } else if ("dark".equals(theme)) {
+                mode = Prefs.THEME_DARK;
+            }
+            if (mode >= 0 && mode != Prefs.themeMode(app)) {
+                final int wanted = mode;
+                if (Looper.myLooper() == Looper.getMainLooper()) {
+                    Prefs.setThemeMode(app, wanted);
+                } else {
+                    MAIN.post(() -> Prefs.setThemeMode(app, wanted));
+                }
+                changed = true;
+            }
+        }
+
+        String cards = style.optString("cards", "");
+        if (!cards.isEmpty()) {
+            int styleValue = -1;
+            if ("elevated".equals(cards)) {
+                styleValue = Prefs.CARD_ELEVATED;
+            } else if ("filled".equals(cards)) {
+                styleValue = Prefs.CARD_FILLED;
+            } else if ("outlined".equals(cards)) {
+                styleValue = Prefs.CARD_OUTLINED;
+            }
+            if (styleValue >= 0 && styleValue != Prefs.cardStyle(app)) {
+                Prefs.setCardStyle(app, styleValue);
+                changed = true;
+            }
+        }
+
+        int radius = style.optInt("radius", -1);
+        if (radius >= 0 && radius != Prefs.radius(app)) {
+            Prefs.setRadius(app, radius);
+            changed = true;
+        }
+
+        int font = style.optInt("font", -1);
+        if (font >= 0 && font != Prefs.fontScale(app)) {
+            Prefs.setFontScale(app, font);
+            changed = true;
+        }
+
+        String region = style.optString("region", "");
+        if (region.length() == 2 && !region.equals(Prefs.region(app))) {
+            Prefs.setRegion(app, region.toUpperCase());
+            changed = true;
+        }
+        return changed;
+    }
+
     public static void applyFeedAsync(Context c, List<Video> input, FeedCallback callback) {
         final List<Video> source = input == null ? new ArrayList<>() : input;
         if (!hasEnabled(c)) {
@@ -299,7 +417,7 @@ public final class PluginManager {
                 if (info.dex) {
                     output = dexFor(c, info).onFeed(json);
                 } else if (new File(info.dirPath, "plugin.js").isFile()) {
-                    output = scriptFor(info).call("onFeed", json);
+                    output = scriptFor(c, info).call("onFeed", json);
                 } else {
                     continue;
                 }
@@ -346,7 +464,7 @@ public final class PluginManager {
                 if (info.dex) {
                     output = dexFor(c, info).onVideo(videoId);
                 } else if (new File(info.dirPath, "plugin.js").isFile()) {
-                    output = scriptFor(info).call("onVideo", videoId);
+                    output = scriptFor(c, info).call("onVideo", videoId);
                 } else {
                     continue;
                 }
@@ -466,11 +584,12 @@ public final class PluginManager {
         file.delete();
     }
 
-    private static ScriptPlugin scriptFor(PluginInfo info) {
+    private static ScriptPlugin scriptFor(Context c, PluginInfo info) {
         synchronized (CACHE_LOCK) {
             ScriptPlugin plugin = SCRIPTS.get(info.id);
             if (plugin == null) {
-                plugin = new ScriptPlugin(info.id, new File(info.dirPath, "plugin.js"));
+                plugin = new ScriptPlugin(info.id, new File(info.dirPath, "plugin.js"),
+                        c.getApplicationContext());
                 SCRIPTS.put(info.id, plugin);
             }
             return plugin;

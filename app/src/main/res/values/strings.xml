@@ -16,23 +16,12 @@
     <string name="ok">Ок</string>
     <string name="loading">Загрузка…</string>
     <string name="error">Ошибка</string>
-    <string name="demo">Демо</string>
-    <string name="demo_mode">Демо-режим</string>
-    <string name="demo_mode_text">Показаны демо-видео. Подключи ключ YouTube Data API, чтобы видеть настоящие тренды, поиск и комментарии.</string>
-    <string name="connect">Подключить</string>
     <string name="open_settings">Открыть настройки</string>
-    <string name="copied">Скопировано</string>
     <string name="all">Все</string>
 
-    <string name="trending">В тренде</string>
-    <string name="region_ru">Россия</string>
-    <string name="region_us">США</string>
-    <string name="region_kz">Казахстан</string>
-    <string name="region_ua">Украина</string>
-    <string name="region_de">Германия</string>
-    <string name="region_gb">Великобритания</string>
-    <string name="region_jp">Япония</string>
-    <string name="region_kr">Корея</string>
+    <string name="sign_in_banner">Войди в Google, чтобы видеть свои рекомендации, ставить лайки и писать комментарии.</string>
+    <string name="sign_in">Войти</string>
+
     <string name="home_empty">Пока нет видео</string>
     <string name="home_empty_hint">Потяни вниз, чтобы обновить.</string>
     <string name="home_error">Не удалось загрузить ленту</string>
@@ -41,10 +30,9 @@
     <string name="search_hint">Поиск на YouTube</string>
     <string name="search_action">Найти</string>
     <string name="search_empty">Ничего не найдено</string>
-    <string name="search_start">Введи запрос — поиск идёт через официальный YouTube Data API.</string>
-    <string name="search_demo">Демо-поиск по встроенным видео. Подключи ключ API, чтобы искать на всём YouTube.</string>
+    <string name="search_start">Введи запрос — поиск идёт напрямую на серверы YouTube, без API-ключа.</string>
+    <string name="search_note">Поиск идёт напрямую на серверы YouTube.</string>
     <string name="search_error">Не удалось выполнить поиск</string>
-    <string name="search_demo_empty">В демо-наборе нет видео с таким названием.</string>
 
     <string name="like">Нравится</string>
     <string name="like_done">Лайк поставлен</string>
@@ -57,17 +45,51 @@
     <string name="comments">Комментарии</string>
     <string name="comments_empty">Комментариев пока нет</string>
     <string name="comments_error">Не удалось загрузить комментарии</string>
+    <string name="comments_disabled">Комментарии отключены автором</string>
+    <string name="comments_loading">Загрузка комментариев…</string>
     <string name="comment_hint">Написать комментарий…</string>
     <string name="send">Отправить</string>
     <string name="comment_sent">Комментарий отправлен</string>
     <string name="comment_failed">Не удалось отправить комментарий</string>
-    <string name="comment_token_required">Для комментариев нужен OAuth-токен</string>
-    <string name="comment_token_text">YouTube разрешает писать комментарии только по OAuth-токену с правом youtube.force-ssl. Открой настройки и вставь токен.\n\nFamily Link и родительский контроль ограничивают аккаунт на стороне Google. MargyTube не обходит эти ограничения: если аккаунту запрещено комментировать, API вернёт ошибку.</string>
-    <string name="comments_demo">Демо-комментарии. С ключом API здесь будут настоящие.</string>
-    <string name="video_error">Видео недоступно для встраивания</string>
-    <string name="video_error_text">Автор запретил встраивание. Открой ролик в YouTube.</string>
+    <string name="need_login_title">Нужен вход в Google</string>
+    <string name="need_login_text">Лайки и комментарии YouTube принимает только от аккаунта. Войди в настройках — это бесплатно и без API-ключей.\n\nFamily Link и родительский контроль остаются на стороне Google: если аккаунту запрещено комментировать, приложение это не обходит.</string>
+    <string name="video_error">Видео недоступно</string>
+    <string name="video_error_text">YouTube не отдал данные этого ролика. Открой его в YouTube.</string>
     <string name="description_empty">Автор не добавил описание.</string>
     <string name="channel_label">Канал</string>
+    <string name="player_note">Играет Google Media3 (ExoPlayer): системный аппаратный декодер, без веб-плеера.</string>
+    <string name="player_no_stream">YouTube не отдал поток для этого видео</string>
+    <string name="player_failed">Ошибка воспроизведения: %1$s</string>
+    <string name="player_fallback">Переключаюсь на совместимый поток</string>
+
+    <string name="section_account">Аккаунт Google</string>
+    <string name="account_none">Не выполнен вход</string>
+    <string name="account_hint">Без аккаунта работают поиск, лента и комментарии, но не лайки и не свои комментарии.</string>
+    <string name="account_signed">Аккаунт подключён</string>
+    <string name="account_signed_hint">Лайки и комментарии уходят от твоего имени.</string>
+    <string name="sign_out">Выйти</string>
+    <string name="sign_in_title">Вход в Google</string>
+    <string name="sign_in_code_text">Открой google.com/device и введи код:\n\n%1$s</string>
+    <string name="sign_in_waiting">Ждём подтверждения. Это окно можно закрыть — вход завершится сам.</string>
+    <string name="open_site">Открыть сайт</string>
+    <string name="copy_code">Скопировать код</string>
+    <string name="code_copied">Код скопирован</string>
+    <string name="sign_in_done">Вход выполнен: %1$s</string>
+    <string name="sign_in_done_empty">Вход выполнен</string>
+    <string name="sign_in_failed">Не удалось войти</string>
+    <string name="sign_in_note">Пароль вводится только на сайте Google, приложение его не видит. Вход идёт через клиент YouTube для ТВ — это неофициальный путь, Google может его закрыть.</string>
+    <string name="sign_out_confirm">Выйти из Google? Лайки и комментарии перестанут работать.</string>
+    <string name="signed_out">Вышел из аккаунта</string>
+    <string name="family_link">Family Link и родительский контроль — ограничение аккаунта Google. Приложение их не обходит: если аккаунту запрещено комментировать, YouTube вернёт ошибку.</string>
+    <string name="region_label">Регион</string>
+    <string name="region_ru">Россия</string>
+    <string name="region_us">США</string>
+    <string name="region_kz">Казахстан</string>
+    <string name="region_ua">Украина</string>
+    <string name="region_de">Германия</string>
+    <string name="region_gb">Великобритания</string>
+    <string name="region_jp">Япония</string>
+    <string name="region_kr">Корея</string>
 
     <string name="section_appearance">Оформление</string>
     <string name="dynamic_color">Material You</string>
@@ -93,31 +115,15 @@
     <string name="radius_value">%d dp</string>
     <string name="font_value">%d %%</string>
 
-    <string name="section_youtube">YouTube</string>
-    <string name="api_key">Ключ YouTube Data API</string>
-    <string name="api_key_helper">Ключ хранится только на телефоне. Создай его в Google Cloud Console → YouTube Data API v3.</string>
-    <string name="region_label">Регион трендов</string>
-    <string name="test">Проверить</string>
-    <string name="testing">Проверяем…</string>
-    <string name="api_ok">Ключ работает: %d видео</string>
-    <string name="api_bad">Ошибка: %s</string>
-
-    <string name="section_comments">Комментарии</string>
-    <string name="oauth_token">OAuth-токен</string>
-    <string name="oauth_helper">Право youtube.force-ssl. Живёт около часа; для постоянного входа нужен свой OAuth-клиент.</string>
-    <string name="token_ok">Токен работает: %s</string>
-    <string name="token_bad">Ошибка: %s</string>
-    <string name="family_link">Family Link и родительский контроль — ограничение аккаунта Google. Приложение их не обходит: если аккаунту запрещено комментировать, API вернёт ошибку.</string>
-
     <string name="section_plugins">Плагины</string>
-    <string name="plugins_text">Manifest.json и JS-хуки, как в MargyT. Меняют ленту и реакцию на видео, не трогая остальной код.</string>
+    <string name="plugins_text">Manifest.json и JS-хуки, как в MargyT. Меняют ленту, экран видео и оформление. Плагин «Полная кастомизация» уже установлен и включён.</string>
     <string name="open_plugins">Открыть плагины</string>
 
     <string name="section_about">О приложении</string>
-    <string name="about_text">MargyTube — открытый клиент YouTube: официальный Data API, встроенный плеер, настоящий Material You 3 и плагины. Зелёный логотип — от Wexresprise.</string>
+    <string name="about_text">MargyTube — открытый клиент YouTube: поиск, лента и комментарии напрямую с серверов YouTube, воспроизведение через Google Media3, настоящий Material You 3 и плагины.</string>
     <string name="version">Версия %s</string>
     <string name="source">Исходный код на GitHub</string>
-    <string name="official_note">Плеер — официальный YouTube IFrame. Приложение не скачивает видео и не обходит ограничения YouTube.</string>
+    <string name="official_note">Данные и потоки приходят с серверов YouTube по внутреннему протоколу (InnerTube), без твоего API-ключа. Это неофициальный путь: YouTube может что-то поменять. Приложение не скачивает видео и не блокирует рекламу.</string>
 
     <string name="plugins_title">Плагины</string>
     <string name="plugins_subtitle">manifest.json + JS-хуки</string>
@@ -136,31 +142,21 @@
     <string name="plugin_hooks">Хуки: %s</string>
     <string name="plugin_no_hooks">без хуков</string>
     <string name="plugin_format_title">Формат плагина</string>
-    <string name="plugin_format_text">ZIP с manifest.json и plugin.js. Хуки: onFeed(json) → json, onVideo(id) → текст или null. Плагин может быть и DEX: manifest.json + classes.dex, класс реализует MargyTubePlugin. Документация — в README на GitHub.</string>
+    <string name="plugin_format_text">ZIP с manifest.json и plugin.js. Хуки: onFeed(json) → json, onVideo(id) → текст или null, onApp() → оформление через margytube.applyStyle({accent, theme, cards, radius, font}). Плагин может быть и DEX: manifest.json + classes.dex. Документация — в README на GitHub.</string>
     <string name="plugin_timeout">Плагин превысил лимит времени</string>
-
-    <string name="need_token_title">Нужен OAuth-токен</string>
-    <string name="err_network">Нет связи с интернетом</string>
-    <string name="err_no_key">Нужен ключ YouTube Data API</string>
-    <string name="err_api">Ошибка YouTube API: %s</string>
-    <string name="err_token">Токен недействителен или истёк</string>
-    <string name="err_quota">Квота YouTube API на сегодня исчерпана</string>
-    <string name="err_key_invalid">Ключ API недействителен</string>
-    <string name="err_forbidden">YouTube запретил это действие для аккаунта</string>
-    <string name="err_parse">Не удалось разобрать ответ YouTube</string>
-    <string name="demo_chip">ДЕМО</string>
-
-    <string name="back">Назад</string>
-    <string name="settings_saved">Сохранено</string>
-    <string name="accent_note">«Обои» — настоящий Material You из системы на Android 12+. Остальные акценты — реальные роли Material 3.</string>
-    <string name="github">github.com/rybchikdavid-byte/MargyTube</string>
     <string name="plugin_importing">Импорт плагина…</string>
     <string name="plugin_notes_title">От плагинов</string>
-    <string name="comments_disabled">Комментарии отключены автором</string>
-    <string name="comments_loading">Загрузка комментариев…</string>
-    <string name="token_ok_empty">Токен действителен</string>
-    <string name="player_note">Официальный плеер YouTube. Если видео не играет, автор запретил встраивание — открой его в YouTube.</string>
-    <string name="plugin_example_name">Пример плагина</string>
+
+    <string name="accent_note">«Обои» — настоящий Material You из системы на Android 12+. Остальные акценты — реальные роли Material 3. Плагин оформления может менять их сам.</string>
+    <string name="err_network">Нет связи с интернетом</string>
+    <string name="err_api">Ошибка YouTube: %s</string>
+    <string name="err_parse">Не удалось разобрать ответ YouTube</string>
+    <string name="err_sign_in">Сначала войди в Google</string>
+    <string name="err_session_expired">Сессия истекла, войди снова</string>
+    <string name="err_no_channel">У аккаунта нет канала YouTube</string>
+    <string name="back">Назад</string>
+    <string name="settings_saved">Сохранено</string>
+    <string name="github">github.com/rybchikdavid-byte/MargyTube</string>
 
     <plurals name="views">
         <item quantity="one">%s просмотр</item>

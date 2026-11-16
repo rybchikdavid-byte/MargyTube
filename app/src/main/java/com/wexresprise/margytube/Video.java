@@ -12,6 +12,7 @@ public class Video implements Serializable {
     public String channelId = "";
     public String description = "";
     public String publishedAt = "";
+    public String publishedText = "";
     public String duration = "";
     public String thumbnail = "";
     public long views = -1;
@@ -45,6 +46,7 @@ public class Video implements Serializable {
         o.put("channelId", channelId);
         o.put("description", description);
         o.put("published", publishedAt);
+        o.put("publishedText", publishedText);
         o.put("duration", duration);
         o.put("thumbnail", thumbnail);
         o.put("views", views);
@@ -62,6 +64,7 @@ public class Video implements Serializable {
         v.channelId = o.optString("channelId", "");
         v.description = o.optString("description", "");
         v.publishedAt = o.optString("published", o.optString("publishedAt", ""));
+        v.publishedText = o.optString("publishedText", "");
         v.duration = o.optString("duration", "");
         v.thumbnail = o.optString("thumbnail", "");
         v.views = o.optLong("views", -1);

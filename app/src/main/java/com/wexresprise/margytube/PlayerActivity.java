@@ -1,28 +1,26 @@
 package com.wexresprise.margytube;
 
-import android.annotation.SuppressLint;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
-import android.view.ViewGroup;
-import android.webkit.WebChromeClient;
-import android.webkit.WebResourceError;
-import android.webkit.WebResourceRequest;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
-import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
-import androidx.core.view.WindowCompat;
-import androidx.core.view.WindowInsetsCompat;
-import androidx.core.view.WindowInsetsControllerCompat;
+import androidx.media3.common.AudioAttributes;
+import androidx.media3.common.C;
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.PlaybackException;
+import androidx.media3.common.Player;
+import androidx.media3.datasource.DefaultDataSource;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.source.MediaSource;
+import androidx.media3.exoplayer.source.MergingMediaSource;
+import androidx.media3.exoplayer.source.ProgressiveMediaSource;
+import androidx.media3.ui.PlayerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -36,12 +34,15 @@ import com.wexresprise.margytube.plugin.PluginManager;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Plays the video with Google's Media3 player (ExoPlayer), fed by the streams
+ * YouTube's own player endpoint hands out. The IFrame page is gone: this is a
+ * real native player with the system's hardware decoding.
+ */
 public class PlayerActivity extends BaseActivity {
-    private FrameLayout root;
-    private View playerMain;
-    private View playerScroll;
+    private View root;
+    private PlayerView playerView;
     private MaterialToolbar toolbar;
-    private WebView web;
     private ProgressBar progress;
     private TextView title;
     private TextView meta;
@@ -55,16 +56,16 @@ public class PlayerActivity extends BaseActivity {
     private RecyclerView commentsList;
     private TextView commentsCount;
     private TextView commentsStatus;
-    private TextView commentsDemo;
     private MaterialButton commentsRetry;
     private TextInputEditText commentInput;
     private View commentBar;
 
     private CommentAdapter commentAdapter;
     private Video video;
+    private ExoPlayer player;
+    private InnerTube.Playback playback;
+    private boolean usingMerged;
     private boolean descriptionExpanded;
-    private View fullscreenView;
-    private WebChromeClient.CustomViewCallback fullscreenCallback;
 
     public static void open(Context context, Video video) {
         Intent intent = new Intent(context, PlayerActivity.class);
@@ -78,10 +79,8 @@ public class PlayerActivity extends BaseActivity {
         setContentView(R.layout.activity_player);
 
         root = findViewById(R.id.playerRoot);
-        playerMain = findViewById(R.id.playerMain);
-        playerScroll = findViewById(R.id.playerScroll);
+        playerView = findViewById(R.id.playerView);
         toolbar = findViewById(R.id.toolbar);
-        web = findViewById(R.id.playerWeb);
         progress = findViewById(R.id.playerProgress);
         title = findViewById(R.id.videoTitle);
         meta = findViewById(R.id.videoMeta);
@@ -95,7 +94,6 @@ public class PlayerActivity extends BaseActivity {
         commentsList = findViewById(R.id.commentsList);
         commentsCount = findViewById(R.id.commentsCount);
         commentsStatus = findViewById(R.id.commentsStatus);
-        commentsDemo = findViewById(R.id.commentsDemo);
         commentsRetry = findViewById(R.id.commentsRetry);
         commentInput = findViewById(R.id.commentInput);
         commentBar = findViewById(R.id.commentBar);
@@ -123,15 +121,143 @@ public class PlayerActivity extends BaseActivity {
         commentsRetry.setOnClickListener(v -> loadComments());
 
         renderVideo();
-        setupWebView();
-        loadPlayer();
-        loadDetails();
+        setupPlayer();
+        loadPlayback();
         loadComments();
         loadPluginNotes();
     }
 
+    private void setupPlayer() {
+        playerView.setKeepScreenOn(true);
+        player = new ExoPlayer.Builder(this).build();
+        player.setAudioAttributes(new AudioAttributes.Builder()
+                .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
+                .setUsage(C.USAGE_MEDIA)
+                .build(), true);
+        playerView.setPlayer(player);
+        player.addListener(new Player.Listener() {
+            @Override
+            public void onPlaybackStateChanged(int state) {
+                if (state == Player.STATE_READY) {
+                    progress.setVisibility(View.GONE);
+                } else if (state == Player.STATE_BUFFERING) {
+                    progress.setVisibility(View.VISIBLE);
+                } else if (state == Player.STATE_ENDED) {
+                    progress.setVisibility(View.GONE);
+                }
+            }
+
+            @Override
+            public void onPlayerError(PlaybackException error) {
+                if (usingMerged && playback != null && !playback.muxedUrl.isEmpty()) {
+                    usingMerged = false;
+                    player.setMediaSource(progressive(playback.muxedUrl));
+                    player.prepare();
+                    player.setPlayWhenReady(true);
+                    snackbar(getString(R.string.player_fallback));
+                    return;
+                }
+                progress.setVisibility(View.GONE);
+                snackbar(getString(R.string.player_failed, error.getErrorCodeName()));
+            }
+        });
+    }
+
+    private void loadPlayback() {
+        if (video.id == null || video.id.isEmpty()) {
+            progress.setVisibility(View.GONE);
+            snackbar(getString(R.string.video_error));
+            return;
+        }
+        InnerTube.playback(this, video.id, new InnerTube.Cb<InnerTube.Playback>() {
+            @Override
+            public void ok(InnerTube.Playback data) {
+                if (isFinishing() || isDestroyed()) {
+                    return;
+                }
+                playback = data;
+                if (data.video != null) {
+                    mergeDetails(data.video);
+                }
+                prepare(data);
+            }
+
+            @Override
+            public void error(String message) {
+                if (isFinishing() || isDestroyed()) {
+                    return;
+                }
+                progress.setVisibility(View.GONE);
+                snackbar(message);
+            }
+        });
+    }
+
+    private void mergeDetails(Video fresh) {
+        if (fresh.title != null && !fresh.title.isEmpty()) {
+            video.title = fresh.title;
+        }
+        if (fresh.channel != null && !fresh.channel.isEmpty()) {
+            video.channel = fresh.channel;
+        }
+        if (fresh.channelId != null && !fresh.channelId.isEmpty()) {
+            video.channelId = fresh.channelId;
+        }
+        if (fresh.description != null && !fresh.description.isEmpty()) {
+            video.description = fresh.description;
+        }
+        if (!fresh.publishedAt.isEmpty()) {
+            video.publishedAt = fresh.publishedAt;
+        }
+        if (fresh.views >= 0) {
+            video.views = fresh.views;
+        }
+        if (!fresh.duration.isEmpty()) {
+            video.duration = fresh.duration;
+        }
+        if (!fresh.thumbnail.isEmpty()) {
+            video.thumbnail = fresh.thumbnail;
+        }
+        renderVideo();
+    }
+
+    private void prepare(InnerTube.Playback data) {
+        MediaSource source = null;
+        if (data.canMerge()) {
+            source = merge(data.videoUrl, data.audioUrl);
+            usingMerged = true;
+        }
+        if (source == null && !data.muxedUrl.isEmpty()) {
+            source = progressive(data.muxedUrl);
+            usingMerged = false;
+        }
+        if (source == null) {
+            progress.setVisibility(View.GONE);
+            snackbar(getString(R.string.player_no_stream));
+            return;
+        }
+        player.setMediaSource(source);
+        player.prepare();
+        player.setPlayWhenReady(true);
+    }
+
+    private MediaSource progressive(String url) {
+        DefaultDataSource.Factory factory = new DefaultDataSource.Factory(this);
+        return new ProgressiveMediaSource.Factory(factory)
+                .createMediaSource(MediaItem.fromUri(url));
+    }
+
+    private MediaSource merge(String videoUrl, String audioUrl) {
+        DefaultDataSource.Factory factory = new DefaultDataSource.Factory(this);
+        ProgressiveMediaSource.Factory sourceFactory = new ProgressiveMediaSource.Factory(factory);
+        MediaSource videoSource = sourceFactory.createMediaSource(MediaItem.fromUri(videoUrl));
+        MediaSource audioSource = sourceFactory.createMediaSource(MediaItem.fromUri(audioUrl));
+        return new MergingMediaSource(videoSource, audioSource);
+    }
+
     private void renderVideo() {
         title.setText(video.title);
+        toolbar.setTitle("");
 
         StringBuilder metaText = new StringBuilder();
         if (video.views >= 0) {
@@ -141,11 +267,20 @@ public class PlayerActivity extends BaseActivity {
         if (date.isEmpty()) {
             date = Formats.relative(video.publishedAt);
         }
+        if (date.isEmpty() && video.publishedText != null) {
+            date = video.publishedText;
+        }
         if (!date.isEmpty()) {
             if (metaText.length() > 0) {
                 metaText.append(" • ");
             }
             metaText.append(date);
+        }
+        if (!video.duration.isEmpty()) {
+            if (metaText.length() > 0) {
+                metaText.append(" • ");
+            }
+            metaText.append(video.duration);
         }
         meta.setText(metaText);
         meta.setVisibility(metaText.length() == 0 ? View.GONE : View.VISIBLE);
@@ -172,94 +307,6 @@ public class PlayerActivity extends BaseActivity {
         descriptionToggle.setText(descriptionExpanded ? R.string.show_less : R.string.show_more);
     }
 
-    @SuppressLint("SetJavaScriptEnabled")
-    private void setupWebView() {
-        web.setBackgroundColor(Color.BLACK);
-        WebSettings settings = web.getSettings();
-        settings.setJavaScriptEnabled(true);
-        settings.setDomStorageEnabled(true);
-        settings.setMediaPlaybackRequiresUserGesture(true);
-        settings.setLoadWithOverviewMode(true);
-        settings.setUseWideViewPort(true);
-        settings.setAllowFileAccess(false);
-        settings.setAllowContentAccess(false);
-        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-
-        web.setWebViewClient(new WebViewClient() {
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                progress.setVisibility(View.GONE);
-            }
-
-            @Override
-            public void onReceivedError(WebView view, WebResourceRequest request,
-                                        WebResourceError error) {
-                if (request.isForMainFrame()) {
-                    progress.setVisibility(View.GONE);
-                    snackbar(getString(R.string.err_network));
-                }
-            }
-        });
-        web.setWebChromeClient(new WebChromeClient() {
-            @Override
-            public void onShowCustomView(View view, CustomViewCallback callback) {
-                showFullscreen(view, callback);
-            }
-
-            @Override
-            public void onHideCustomView() {
-                hideFullscreen();
-            }
-        });
-    }
-
-    private void loadPlayer() {
-        String safeId = video.id == null ? "" : video.id.replaceAll("[^A-Za-z0-9_-]", "");
-        if (safeId.isEmpty()) {
-            progress.setVisibility(View.GONE);
-            snackbar(getString(R.string.video_error));
-            return;
-        }
-        String html = "<!DOCTYPE html><html><head>"
-                + "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
-                + "<style>html,body{margin:0;padding:0;height:100%;background:#000;}"
-                + "iframe{width:100%;height:100%;border:0;}</style></head><body>"
-                + "<iframe src=\"https://www.youtube.com/embed/" + safeId
-                + "?rel=0&playsinline=1&modestbranding=1\" "
-                + "allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; "
-                + "gyroscope; picture-in-picture; web-share\" allowfullscreen></iframe>"
-                + "</body></html>";
-        web.loadDataWithBaseURL("https://www.youtube.com", html, "text/html", "UTF-8", null);
-    }
-
-    private void loadDetails() {
-        if (!YouTubeApi.hasKey(this) || video.id.isEmpty()) {
-            return;
-        }
-        YouTubeApi.video(this, video.id, new YouTubeApi.Cb<Video>() {
-            @Override
-            public void ok(Video fresh) {
-                if (isFinishing() || isDestroyed()) {
-                    return;
-                }
-                video.title = fresh.title;
-                video.channel = fresh.channel;
-                video.description = fresh.description;
-                video.publishedAt = fresh.publishedAt;
-                video.views = fresh.views;
-                video.likes = fresh.likes;
-                video.comments = fresh.comments;
-                video.duration = fresh.duration;
-                renderVideo();
-            }
-
-            @Override
-            public void error(String message) {
-                // The card still works from the feed data; don't shout about it.
-            }
-        });
-    }
-
     private void loadComments() {
         if (video.id.isEmpty()) {
             return;
@@ -267,18 +314,8 @@ public class PlayerActivity extends BaseActivity {
         commentsStatus.setVisibility(View.VISIBLE);
         commentsStatus.setText(R.string.comments_loading);
         commentsRetry.setVisibility(View.GONE);
-        commentsDemo.setVisibility(View.GONE);
 
-        if (!YouTubeApi.hasKey(this)) {
-            List<Comment> demo = Demo.comments();
-            commentAdapter.submit(demo);
-            commentsStatus.setVisibility(View.GONE);
-            commentsDemo.setVisibility(View.VISIBLE);
-            updateCommentsCount(demo.size());
-            return;
-        }
-
-        YouTubeApi.comments(this, video.id, new YouTubeApi.Cb<List<Comment>>() {
+        InnerTube.comments(this, video.id, new InnerTube.Cb<List<Comment>>() {
             @Override
             public void ok(List<Comment> data) {
                 if (isFinishing() || isDestroyed()) {
@@ -335,12 +372,12 @@ public class PlayerActivity extends BaseActivity {
     }
 
     private void like() {
-        if (!YouTubeApi.hasToken(this)) {
-            showTokenDialog();
+        if (!Prefs.isSignedIn(this)) {
+            showLoginDialog();
             return;
         }
         likeButton.setEnabled(false);
-        YouTubeApi.rateLike(this, video.id, new YouTubeApi.Cb<Void>() {
+        InnerTube.rateLike(this, video.id, new InnerTube.Cb<Void>() {
             @Override
             public void ok(Void data) {
                 if (isFinishing() || isDestroyed()) {
@@ -384,12 +421,12 @@ public class PlayerActivity extends BaseActivity {
         if (text.isEmpty()) {
             return;
         }
-        if (!YouTubeApi.hasToken(this)) {
-            showTokenDialog();
+        if (!Prefs.isSignedIn(this)) {
+            showLoginDialog();
             return;
         }
         sendButton.setEnabled(false);
-        YouTubeApi.postComment(this, video.id, text, new YouTubeApi.Cb<Comment>() {
+        InnerTube.postComment(this, video.id, text, new InnerTube.Cb<Comment>() {
             @Override
             public void ok(Comment comment) {
                 if (isFinishing() || isDestroyed()) {
@@ -399,7 +436,6 @@ public class PlayerActivity extends BaseActivity {
                 commentInput.setText("");
                 commentAdapter.addFirst(comment);
                 commentsStatus.setVisibility(View.GONE);
-                commentsDemo.setVisibility(View.GONE);
                 updateCommentsCount(commentAdapter.count());
                 snackbar(getString(R.string.comment_sent));
             }
@@ -415,87 +451,32 @@ public class PlayerActivity extends BaseActivity {
         });
     }
 
-    private void showTokenDialog() {
+    private void showLoginDialog() {
         new MaterialAlertDialogBuilder(this)
-                .setTitle(R.string.need_token_title)
-                .setMessage(R.string.comment_token_text)
+                .setTitle(R.string.need_login_title)
+                .setMessage(R.string.need_login_text)
                 .setNegativeButton(R.string.close, null)
                 .setPositiveButton(R.string.open_settings, (dialog, which) ->
                         startActivity(new Intent(this, SettingsActivity.class)))
                 .show();
     }
 
-    private void showFullscreen(View view, WebChromeClient.CustomViewCallback callback) {
-        if (fullscreenView != null) {
-            callback.onCustomViewHidden();
-            return;
-        }
-        fullscreenView = view;
-        fullscreenCallback = callback;
-        root.addView(view, new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        toolbar.setVisibility(View.GONE);
-        playerScroll.setVisibility(View.GONE);
-        commentBar.setVisibility(View.GONE);
-
-        WindowInsetsControllerCompat controller =
-                WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
-        controller.hide(WindowInsetsCompat.Type.systemBars());
-        controller.setSystemBarsBehavior(
-                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-    }
-
-    private void hideFullscreen() {
-        if (fullscreenView == null) {
-            return;
-        }
-        root.removeView(fullscreenView);
-        fullscreenView = null;
-        if (fullscreenCallback != null) {
-            fullscreenCallback.onCustomViewHidden();
-            fullscreenCallback = null;
-        }
-        toolbar.setVisibility(View.VISIBLE);
-        playerScroll.setVisibility(View.VISIBLE);
-        commentBar.setVisibility(View.VISIBLE);
-        WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView())
-                .show(WindowInsetsCompat.Type.systemBars());
-        updateSystemBars();
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (fullscreenView != null) {
-            hideFullscreen();
-            return;
-        }
-        super.onBackPressed();
-    }
-
     @Override
     protected void onPause() {
         super.onPause();
-        if (web != null) {
-            web.onPause();
-        }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (web != null) {
-            web.onResume();
+        if (player != null) {
+            player.pause();
         }
     }
 
     @Override
     protected void onDestroy() {
-        if (web != null) {
-            web.stopLoading();
-            web.loadUrl("about:blank");
-            web.removeAllViews();
-            web.destroy();
-            web = null;
+        if (player != null) {
+            player.release();
+            player = null;
+        }
+        if (playerView != null) {
+            playerView.setPlayer(null);
         }
         super.onDestroy();
     }

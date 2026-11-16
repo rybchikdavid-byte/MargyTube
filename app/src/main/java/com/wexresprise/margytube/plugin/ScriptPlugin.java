@@ -1,6 +1,9 @@
 package com.wexresprise.margytube.plugin;
 
+import android.content.Context;
 import android.util.Log;
+
+import com.wexresprise.margytube.Prefs;
 
 import org.mozilla.javascript.BaseFunction;
 import org.mozilla.javascript.Context;
@@ -24,6 +27,9 @@ import java.util.concurrent.TimeoutException;
 /**
  * A JS plugin from plugin.js. Safe standard objects only: no java.*, no Packages,
  * so a plugin cannot reach the file system or reflection by accident.
+ *
+ * Besides onFeed and onVideo, a plugin may define onApp and call
+ * margytube.applyStyle({...}) to own the whole appearance.
  */
 public final class ScriptPlugin {
     private static final String TAG = "MargyTubePlugin";
@@ -31,6 +37,7 @@ public final class ScriptPlugin {
 
     private final String id;
     private final File script;
+    private final Context app;
     private final ExecutorService exec = Executors.newSingleThreadExecutor(r -> {
         Thread thread = new Thread(r, "mgtp-js");
         thread.setDaemon(true);
@@ -39,9 +46,10 @@ public final class ScriptPlugin {
     private volatile boolean broken;
     private volatile String breakReason;
 
-    public ScriptPlugin(String id, File script) {
+    public ScriptPlugin(String id, File script, Context context) {
         this.id = id;
         this.script = script;
+        this.app = context.getApplicationContext();
     }
 
     public String call(String function, String argument) throws Exception {
@@ -72,10 +80,10 @@ public final class ScriptPlugin {
 
             Scriptable scope = cx.initSafeStandardObjects();
             Scriptable host = cx.newObject(scope);
-            ScriptableObject.putProperty(host, "version", 1);
+            ScriptableObject.putProperty(host, "version", 2);
             ScriptableObject.putProperty(host, "log", new BaseFunction() {
                 @Override
-                public Object call(Context context, Scriptable s, Scriptable thisObj,
+                public Object call(Context c, Scriptable s, Scriptable thisObj,
                                    Object[] args) {
                     StringBuilder builder = new StringBuilder();
                     for (Object arg : args) {
@@ -86,6 +94,32 @@ public final class ScriptPlugin {
                     }
                     Log.d(TAG, id + ": " + builder);
                     return Undefined.instance;
+                }
+            });
+            ScriptableObject.putProperty(host, "get", new BaseFunction() {
+                @Override
+                public Object call(Context c, Scriptable s, Scriptable thisObj,
+                                   Object[] args) {
+                    if (args.length == 0) {
+                        return "";
+                    }
+                    return Prefs.value(app, Context.toString(args[0]));
+                }
+            });
+            ScriptableObject.putProperty(host, "applyStyle", new BaseFunction() {
+                @Override
+                public Object call(Context c, Scriptable s, Scriptable thisObj,
+                                   Object[] args) {
+                    if (args.length == 0) {
+                        return Boolean.FALSE;
+                    }
+                    try {
+                        return PluginManager.applyStyle(app, Context.toString(args[0]))
+                                ? Boolean.TRUE : Boolean.FALSE;
+                    } catch (Exception e) {
+                        Log.w(TAG, id + ": bad style", e);
+                        return Boolean.FALSE;
+                    }
                 }
             });
             ScriptableObject.putProperty(scope, "margytube", host);

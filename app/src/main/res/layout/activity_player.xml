@@ -44,11 +44,13 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content">
 
-                        <WebView
-                            android:id="@+id/playerWeb"
+                        <androidx.media3.ui.PlayerView
+                            android:id="@+id/playerView"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:background="@color/black" />
+                            android:background="@color/black"
+                            app:resize_mode="fit"
+                            app:use_controller="true" />
                     </com.wexresprise.margytube.ui.AspectFrameLayout>
 
                     <ProgressBar
@@ -245,16 +247,6 @@
                         android:paddingVertical="16dp"
                         android:text="@string/comments_loading"
                         android:textAppearance="?attr/textAppearanceBodyMedium"
-                        android:textColor="?attr/colorOnSurfaceVariant"
-                        android:visibility="gone" />
-
-                    <TextView
-                        android:id="@+id/commentsDemo"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:paddingTop="6dp"
-                        android:text="@string/comments_demo"
-                        android:textAppearance="?attr/textAppearanceBodySmall"
                         android:textColor="?attr/colorOnSurfaceVariant"
                         android:visibility="gone" />
 

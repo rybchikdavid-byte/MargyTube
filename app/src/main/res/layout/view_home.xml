@@ -30,7 +30,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:paddingVertical="10dp"
-                android:text="@string/demo_mode_text"
+                android:text="@string/sign_in_banner"
                 android:textAppearance="?attr/textAppearanceBodySmall"
                 android:textColor="?attr/colorOnPrimaryContainer" />
 
@@ -39,7 +39,7 @@
                 style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/connect"
+                android:text="@string/sign_in"
                 android:textColor="?attr/colorOnPrimaryContainer" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>

@@ -83,6 +83,20 @@ public final class Formats {
         }
     }
 
+    /** 754 -> 12:34, 3723 -> 1:02:03. */
+    public static String fromSeconds(long total) {
+        if (total <= 0) {
+            return "";
+        }
+        long hours = total / 3600;
+        long minutes = (total % 3600) / 60;
+        long seconds = total % 60;
+        if (hours > 0) {
+            return String.format(Locale.US, "%d:%02d:%02d", hours, minutes, seconds);
+        }
+        return String.format(Locale.US, "%d:%02d", minutes, seconds);
+    }
+
     public static String relative(String iso) {
         if (iso == null || iso.isEmpty()) {
             return "";

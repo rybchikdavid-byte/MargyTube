@@ -61,6 +61,9 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.Holder> {
             meta.append(Formats.views(context, video.views));
         }
         String relative = Formats.relative(video.publishedAt);
+        if (relative.isEmpty() && video.publishedText != null) {
+            relative = video.publishedText;
+        }
         if (!relative.isEmpty()) {
             if (meta.length() > 0) {
                 meta.append(" • ");
@@ -73,7 +76,6 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.Holder> {
         holder.duration.setText(video.duration);
         holder.duration.setVisibility(video.duration == null || video.duration.isEmpty()
                 ? View.GONE : View.VISIBLE);
-        holder.demoBadge.setVisibility(video.demo ? View.VISIBLE : View.GONE);
 
         ImageLoader.load(holder.thumbnail, video.thumbnailUrl());
         holder.thumbnail.setContentDescription(video.title);
@@ -128,7 +130,6 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.Holder> {
         final MaterialCardView card;
         final com.wexresprise.margytube.ui.AspectImageView thumbnail;
         final TextView duration;
-        final TextView demoBadge;
         final TextView avatarLetter;
         final TextView title;
         final TextView channel;
@@ -139,7 +140,6 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.Holder> {
             card = itemView.findViewById(R.id.card);
             thumbnail = itemView.findViewById(R.id.thumbnail);
             duration = itemView.findViewById(R.id.duration);
-            demoBadge = itemView.findViewById(R.id.demoBadge);
             avatarLetter = itemView.findViewById(R.id.avatarLetter);
             title = itemView.findViewById(R.id.title);
             channel = itemView.findViewById(R.id.channel);

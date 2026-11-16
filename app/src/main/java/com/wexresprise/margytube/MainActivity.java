@@ -40,7 +40,7 @@ public class MainActivity extends BaseActivity implements VideoAdapter.Listener 
     private View viewPlugins;
     private MaterialToolbar toolbar;
     private BottomNavigationView bottomNav;
-    private MaterialCardView demoBanner;
+    private MaterialCardView signInBanner;
     private SwipeRefreshLayout homeRefresh;
     private SwipeRefreshLayout searchRefresh;
     private RecyclerView homeList;
@@ -54,7 +54,6 @@ public class MainActivity extends BaseActivity implements VideoAdapter.Listener 
     private TextView homeEmptyHint;
     private MaterialButton homeRetry;
     private TextView searchEmpty;
-    private TextView searchDemoHint;
     private TextInputEditText searchInput;
     private View pluginsEmpty;
 
@@ -62,7 +61,7 @@ public class MainActivity extends BaseActivity implements VideoAdapter.Listener 
     private boolean homeLoaded;
     private boolean loadingHome;
     private boolean pluginsDirty;
-    private String lastKey = "";
+    private boolean lastSignedIn;
     private String lastRegion = "";
 
     private final ActivityResultLauncher<String[]> importLauncher =
@@ -81,8 +80,8 @@ public class MainActivity extends BaseActivity implements VideoAdapter.Listener 
 
         applyInsets(findViewById(R.id.root), findViewById(R.id.appbar),
                 findViewById(R.id.bottomNav));
-        lastKey = Prefs.apiKey(this);
         lastRegion = Prefs.region(this);
+        lastSignedIn = Prefs.isSignedIn(this);
 
         if (savedInstanceState != null) {
             tab = savedInstanceState.getInt("tab", 0);
@@ -134,9 +133,9 @@ public class MainActivity extends BaseActivity implements VideoAdapter.Listener 
         toolbar = findViewById(R.id.toolbar);
         bottomNav = findViewById(R.id.bottomNav);
 
-        demoBanner = findViewById(R.id.demoBanner);
-        MaterialButton demoConnect = findViewById(R.id.demoBannerButton);
-        demoConnect.setOnClickListener(v ->
+        signInBanner = findViewById(R.id.demoBanner);
+        MaterialButton signInButton = findViewById(R.id.demoBannerButton);
+        signInButton.setOnClickListener(v ->
                 startActivity(new Intent(this, SettingsActivity.class)));
 
         homeRefresh = findViewById(R.id.homeRefresh);
@@ -158,7 +157,6 @@ public class MainActivity extends BaseActivity implements VideoAdapter.Listener 
         searchRefresh = findViewById(R.id.searchRefresh);
         searchList = findViewById(R.id.searchList);
         searchEmpty = findViewById(R.id.searchEmpty);
-        searchDemoHint = findViewById(R.id.searchDemoHint);
         MaterialButton searchButton = findViewById(R.id.searchButton);
 
         searchList.setLayoutManager(new LinearLayoutManager(this));
@@ -175,7 +173,6 @@ public class MainActivity extends BaseActivity implements VideoAdapter.Listener 
             }
             return false;
         });
-        searchDemoHint.setVisibility(YouTubeApi.hasKey(this) ? View.GONE : View.VISIBLE);
 
         pluginsList = findViewById(R.id.pluginsList);
         pluginsEmpty = findViewById(R.id.pluginsEmpty);
@@ -214,7 +211,8 @@ public class MainActivity extends BaseActivity implements VideoAdapter.Listener 
         }
     }
 
-    private static int tabId(int index) {        if (index == 1) {
+    private static int tabId(int index) {
+        if (index == 1) {
             return R.id.tab_search;
         }
         if (index == 2) {
@@ -230,48 +228,46 @@ public class MainActivity extends BaseActivity implements VideoAdapter.Listener 
         viewPlugins.setVisibility(index == 2 ? View.VISIBLE : View.GONE);
         hideKeyboard();
         if (index == 0) {
+            updateBanner();
             loadHome(false);
-        } else if (index == 1) {
-            searchDemoHint.setVisibility(YouTubeApi.hasKey(this) ? View.GONE : View.VISIBLE);
-        } else {
+        } else if (index == 2) {
             loadPlugins();
         }
+    }
+
+    private void updateBanner() {
+        signInBanner.setVisibility(Prefs.isSignedIn(this) ? View.GONE : View.VISIBLE);
     }
 
     private void loadHome(boolean force) {
         if (loadingHome || (!force && homeLoaded)) {
             return;
         }
-        if (!YouTubeApi.hasKey(this)) {
-            demoBanner.setVisibility(View.VISIBLE);
-            homeRefresh.setRefreshing(false);
-            homeLoaded = true;
-            PluginManager.applyFeedAsync(this, Demo.videos(), this::showHomeVideos);
-            return;
-        }
-        demoBanner.setVisibility(View.GONE);
+        updateBanner();
         loadingHome = true;
         homeRefresh.setRefreshing(true);
-        YouTubeApi.trending(this, Prefs.region(this),
-                new YouTubeApi.Cb<List<Video>>() {
-                    @Override
-                    public void ok(List<Video> data) {
-                        loadingHome = false;
-                        homeLoaded = true;
-                        PluginManager.applyFeedAsync(MainActivity.this, data,
-                                MainActivity.this::showHomeVideos);
-                    }
+        InnerTube.feed(this, new InnerTube.Cb<List<Video>>() {
+            @Override
+            public void ok(List<Video> data) {
+                loadingHome = false;
+                homeLoaded = true;
+                PluginManager.applyFeedAsync(MainActivity.this, data,
+                        MainActivity.this::showHomeVideos);
+            }
 
-                    @Override
-                    public void error(String message) {
-                        loadingHome = false;
-                        homeRefresh.setRefreshing(false);
-                        snackbar(message);
-                        if (homeAdapter.count() == 0) {
-                            showHomeEmpty(getString(R.string.home_error), message, true);
-                        }
-                    }
-                });
+            @Override
+            public void error(String message) {
+                if (isFinishing() || isDestroyed()) {
+                    return;
+                }
+                loadingHome = false;
+                homeRefresh.setRefreshing(false);
+                snackbar(message);
+                if (homeAdapter.count() == 0) {
+                    showHomeEmpty(getString(R.string.home_error), message, true);
+                }
+            }
+        });
     }
 
     private void showHomeVideos(List<Video> videos) {
@@ -308,47 +304,32 @@ public class MainActivity extends BaseActivity implements VideoAdapter.Listener 
         }
         hideKeyboard();
         searchEmpty.setVisibility(View.GONE);
-
-        if (!YouTubeApi.hasKey(this)) {
-            searchDemoHint.setVisibility(View.VISIBLE);
-            searchRefresh.setRefreshing(false);
-            List<Video> results = Demo.search(query);
-            searchAdapter.submit(results);
-            if (results.isEmpty()) {
-                searchEmpty.setText(R.string.search_demo_empty);
-                searchEmpty.setVisibility(View.VISIBLE);
-            }
-            return;
-        }
-
-        searchDemoHint.setVisibility(View.GONE);
         searchRefresh.setRefreshing(true);
-        YouTubeApi.search(this, query, Prefs.region(this),
-                new YouTubeApi.Cb<List<Video>>() {
-                    @Override
-                    public void ok(List<Video> data) {
-                        if (isFinishing() || isDestroyed()) {
-                            return;
-                        }
-                        searchRefresh.setRefreshing(false);
-                        searchAdapter.submit(data);
-                        if (data.isEmpty()) {
-                            searchEmpty.setText(R.string.search_empty);
-                            searchEmpty.setVisibility(View.VISIBLE);
-                        }
-                    }
+        InnerTube.search(this, query, new InnerTube.Cb<List<Video>>() {
+            @Override
+            public void ok(List<Video> data) {
+                if (isFinishing() || isDestroyed()) {
+                    return;
+                }
+                searchRefresh.setRefreshing(false);
+                searchAdapter.submit(data);
+                if (data.isEmpty()) {
+                    searchEmpty.setText(R.string.search_empty);
+                    searchEmpty.setVisibility(View.VISIBLE);
+                }
+            }
 
-                    @Override
-                    public void error(String message) {
-                        if (isFinishing() || isDestroyed()) {
-                            return;
-                        }
-                        searchRefresh.setRefreshing(false);
-                        searchEmpty.setText(message);
-                        searchEmpty.setVisibility(View.VISIBLE);
-                        snackbar(message);
-                    }
-                });
+            @Override
+            public void error(String message) {
+                if (isFinishing() || isDestroyed()) {
+                    return;
+                }
+                searchRefresh.setRefreshing(false);
+                searchEmpty.setText(message);
+                searchEmpty.setVisibility(View.VISIBLE);
+                snackbar(message);
+            }
+        });
     }
 
     private void loadPlugins() {
@@ -419,13 +400,13 @@ public class MainActivity extends BaseActivity implements VideoAdapter.Listener 
     @Override
     protected void onResume() {
         super.onResume();
-        String key = Prefs.apiKey(this);
         String region = Prefs.region(this);
-        if (!Objects.equals(key, lastKey) || !Objects.equals(region, lastRegion)) {
-            lastKey = key;
+        boolean signedIn = Prefs.isSignedIn(this);
+        if (!Objects.equals(region, lastRegion) || signedIn != lastSignedIn) {
             lastRegion = region;
+            lastSignedIn = signedIn;
             homeLoaded = false;
-            searchDemoHint.setVisibility(YouTubeApi.hasKey(this) ? View.GONE : View.VISIBLE);
+            updateBanner();
             if (tab == 0) {
                 loadHome(true);
             }
