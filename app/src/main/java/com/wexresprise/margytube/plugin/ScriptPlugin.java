@@ -7,6 +7,7 @@ import com.wexresprise.margytube.Prefs;
 import org.mozilla.javascript.BaseFunction;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
+import org.mozilla.javascript.NativeJSON;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Undefined;
@@ -113,7 +114,18 @@ public final class ScriptPlugin {
                         return Boolean.FALSE;
                     }
                     try {
-                        return PluginManager.applyStyle(app, Context.toString(args[0]))
+                        String json;
+                        Object arg = args[0];
+                        if (arg instanceof CharSequence) {
+                            json = arg.toString();
+                        } else {
+                            Object stringified = NativeJSON.stringify(c, s, arg, null, null);
+                            if (stringified == null || stringified == Undefined.instance) {
+                                return Boolean.FALSE;
+                            }
+                            json = Context.toString(stringified);
+                        }
+                        return PluginManager.applyStyle(app, json)
                                 ? Boolean.TRUE : Boolean.FALSE;
                     } catch (Exception e) {
                         Log.w(TAG, id + ": bad style", e);
