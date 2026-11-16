@@ -35,6 +35,7 @@
     <string name="search_error">Не удалось выполнить поиск</string>
 
     <string name="like">Нравится</string>
+    <string name="liked">Понравилось</string>
     <string name="like_done">Лайк поставлен</string>
     <string name="like_failed">Не удалось поставить лайк</string>
     <string name="share">Поделиться</string>
@@ -47,6 +48,7 @@
     <string name="comments_error">Не удалось загрузить комментарии</string>
     <string name="comments_disabled">Комментарии отключены автором</string>
     <string name="comments_loading">Загрузка комментариев…</string>
+    <string name="comments_loaded">Загружено: %d</string>
     <string name="comment_hint">Написать комментарий…</string>
     <string name="send">Отправить</string>
     <string name="comment_sent">Комментарий отправлен</string>

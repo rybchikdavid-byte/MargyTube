@@ -579,14 +579,18 @@ public final class InnerTube {
                         if (value.isEmpty()) {
                             continue;
                         }
+                        String lower = value.toLowerCase(Locale.ROOT);
+                        boolean views = lower.contains("просмотр")
+                                || lower.contains("view")
+                                || lower.contains("watching")
+                                || value.matches(
+                                "(?i)^[\\d\\s.,]+(тыс\\.?|млн|млрд|k|m|b)?$");
                         if (video.channel.isEmpty()) {
                             video.channel = value;
-                        } else if (video.views < 0) {
+                        } else if (video.views < 0 && views) {
                             long parsed = parseCount(value);
                             if (parsed >= 0) {
                                 video.views = parsed;
-                            } else if (video.publishedText.isEmpty()) {
-                                video.publishedText = value;
                             }
                         } else if (video.publishedText.isEmpty()) {
                             video.publishedText = value;

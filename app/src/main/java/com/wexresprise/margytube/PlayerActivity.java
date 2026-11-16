@@ -344,7 +344,7 @@ public class PlayerActivity extends BaseActivity {
     }
 
     private void updateCommentsCount(int count) {
-        commentsCount.setText(count <= 0 ? "" : Formats.comments(this, count));
+        commentsCount.setText(count <= 0 ? "" : getString(R.string.comments_loaded, count));
     }
 
     private void loadPluginNotes() {
@@ -385,7 +385,7 @@ public class PlayerActivity extends BaseActivity {
                 }
                 likeButton.setEnabled(true);
                 video.likes = Math.max(0, video.likes) + 1;
-                likeButton.setText(Formats.compact(video.likes));
+                likeButton.setText(R.string.liked);
                 snackbar(getString(R.string.like_done));
             }
 
